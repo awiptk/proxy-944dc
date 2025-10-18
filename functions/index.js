@@ -35,17 +35,14 @@ exports.handler = async (e, t) => {
       
       return {
         statusCode: 429,
-        body: `<!DOCTYPE html>
-<html>
+        body: `<html>
 <head>
-  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Limit Exceeded</title>
+  <title>Akses Terbatas</title>
 </head>
-<body>
-  <h1>Limit Exceeded</h1>
-  <p>You have exceeded the limit of 5 requests per 30 minutes without an API key.</p>
-  <p>Please wait <strong>${minutesLeft} minutes</strong> or use a valid API key.</p>
+<body style="background: #333; color: white; text-align: center;">
+  <h1 style="color: red;">⏰ Akses Terbatas</h1>
+  <p>Tunggu <strong>${minutesLeft} menit</p>
 </body>
 </html>`,
         headers: {
@@ -55,7 +52,7 @@ exports.handler = async (e, t) => {
     }
   }
   
-  const isWebtoon = /webtoon/i.test(r);
+  const isPhinf = /phinf/i.test(r);
   
   try {
     r = JSON.parse(r);
@@ -64,7 +61,7 @@ exports.handler = async (e, t) => {
   Array.isArray(r) && (r = r.join("&url=")),
     (r = r.replace(/http:\/\/1\.1\.\d\.\d\/bmi\.(https?:\/\/)?/i, "http://"));
   
-  if (!isWebtoon) {
+  if (!isPhinf) {
     r = `https://proxy.duckduckgo.com/iu/?u=${encodeURIComponent(r)}`;
   }
   
