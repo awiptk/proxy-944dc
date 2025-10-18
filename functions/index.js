@@ -17,10 +17,8 @@ exports.handler = async (e, t) => {
   Array.isArray(r) && (r = r.join("&url=")),
     (r = r.replace(/http:\/\/1\.1\.\d\.\d\/bmi\/(https?:\/\/)?/i, "http://"));
   
-  // Cek apakah URL dari webtoon (dikecualikan dari DDG proxy)
-  const isWebtoon = /webtoons?\.com/i.test(r);
+  const isWebtoon = /webtoon/i.test(r);
   
-  // Jika bukan webtoon, gunakan DDG proxy untuk bypass blocking
   if (!isWebtoon) {
     r = `https://proxy.duckduckgo.com/iu/?u=${encodeURIComponent(r)}`;
   }
