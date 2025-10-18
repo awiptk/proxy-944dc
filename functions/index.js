@@ -33,7 +33,10 @@ exports.handler = async (e, t) => {
       
       return {
         statusCode: 429,
-        body: `Limit exceeded. Wait ${minutesLeft} minutes or add env key.`
+        body: `<h1 style="color"red">Batas Tercapai</h1><p><br>Tunggu ${minutesLeft} menit untuk reset</p>`,
+        headers: {
+          "content-type": "text/html"
+        }
       };
     }
   }
