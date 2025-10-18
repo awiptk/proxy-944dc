@@ -15,14 +15,8 @@ exports.handler = async (e, t) => {
   
   const VALID_ENV_KEY = process.env.ENV_KEY;
   
-  if (!VALID_ENV_KEY) {
-    return {
-      statusCode: 500,
-      body: "Server configuration error: ENV_KEY not set"
-    };
-  }
-  
-  const hasValidKey = env && env === VALID_ENV_KEY;
+  // Selalu cek limit untuk request tanpa env parameter
+  const hasValidKey = env && VALID_ENV_KEY && env === VALID_ENV_KEY;
   
   if (!hasValidKey) {
     const now = Date.now();
@@ -41,14 +35,17 @@ exports.handler = async (e, t) => {
       
       return {
         statusCode: 429,
-        body: `<html>
+        body: `<!DOCTYPE html>
+<html>
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Batas Tercapai</title>
+  <title>Limit Exceeded</title>
 </head>
 <body>
-  <h1>⏰ Batas Tercapai</h1>
-  <p>Tunggu ${minutesLeft} menit.</p>
+  <h1>Limit Exceeded</h1>
+  <p>You have exceeded the limit of 5 requests per 30 minutes without an API key.</p>
+  <p>Please wait <strong>${minutesLeft} minutes</strong> or use a valid API key.</p>
 </body>
 </html>`,
         headers: {
@@ -58,7 +55,7 @@ exports.handler = async (e, t) => {
     }
   }
   
-  const isPhinf = /phinf/i.test(r);
+  const isWebtoon = /webtoon/i.test(r);
   
   try {
     r = JSON.parse(r);
@@ -67,7 +64,7 @@ exports.handler = async (e, t) => {
   Array.isArray(r) && (r = r.join("&url=")),
     (r = r.replace(/http:\/\/1\.1\.\d\.\d\/bmi\.(https?:\/\/)?/i, "http://"));
   
-  if (!isPhinf) {
+  if (!isWebtoon) {
     r = `https://proxy.duckduckgo.com/iu/?u=${encodeURIComponent(r)}`;
   }
   
