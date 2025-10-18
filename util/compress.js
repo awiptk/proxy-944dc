@@ -5,7 +5,7 @@ function compress(imagePath, useWebp, quality, originalSize, width, height) {
   
   let sharpInstance = sharp(imagePath);
   
-  // Resize jika ada parameter width atau height dengan smoothing
+  // Resize jika ada parameter width atau height
   if (width || height) {
     sharpInstance = sharpInstance.resize(width, height, {
       fit: 'inside',
@@ -13,15 +13,15 @@ function compress(imagePath, useWebp, quality, originalSize, width, height) {
       kernel: 'lanczos3'
     });
   }
-  
-  // Blur ringan untuk mengurangi noise/artifak kompresi
-  sharpInstance = sharpInstance.blur(0.3);
 
   return sharpInstance
+    .withMetadata(false) // Buang metadata
     .toFormat(format, { 
-      quality, 
-      progressive: true, 
-      optimizeScans: true
+      quality,
+      progressive: true,
+      optimizeScans: true,
+      chromaSubsampling: '4:2:0',
+      mozjpeg: true
     })
     .toBuffer({ resolveWithObject: true })
     .then(({ data, info }) => ({
