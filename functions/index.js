@@ -17,11 +17,15 @@ exports.handler = async (e, t) => {
   Array.isArray(r) && (r = r.join("&url=")),
     (r = r.replace(/http:\/\/1\.1\.\d\.\d\/bmi\/(https?:\/\/)?/i, "http://"));
   
+  const isWebtoon = /webtoons?\.com/i.test(r);
+  
+  if (!isWebtoon) {
+    r = `https://proxy.duckduckgo.com/iu/?u=${encodeURIComponent(r)}`;
+  }
+  
   let d = !s,
     n = 0 != o,
-    // Gunakan parameter q jika ada, jika tidak gunakan l, jika tidak ada keduanya gunakan DEFAULT_QUALITY
     i = parseInt(customQuality || a, 10) || DEFAULT_QUALITY,
-    // Parse width dan height jika ada
     imageWidth = width ? parseInt(width, 10) : null,
     imageHeight = height ? parseInt(height, 10) : null;
   
@@ -63,7 +67,7 @@ exports.handler = async (e, t) => {
       let $ = y.toString("base64");
       return {
         statusCode: 200,
-        body: $,
+        body: c.toString("base64"),
         isBase64Encoded: !0,
         headers: { "content-encoding": "identity", ...h, ...g },
       };
