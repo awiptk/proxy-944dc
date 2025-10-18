@@ -10,13 +10,21 @@ let lastResetTime = Date.now();
 exports.handler = async (e, t) => {
   let { url: r, jpeg: s, l: a, w: width, h: height, q: customQuality, env } = e.queryStringParameters;
   
+  // DEBUG: Log environment info
+  console.log('ENV_KEY from process:', process.env.ENV_KEY);
+  console.log('env parameter:', env);
+  console.log('Match:', env === process.env.ENV_KEY);
+  
   if (!r)
     return { statusCode: 200, body: "Bandwidth Hero Data Compression Service" };
   
   const VALID_ENV_KEY = process.env.ENV_KEY;
   
-  // Selalu cek limit untuk request tanpa env parameter
+  // Cek apakah env parameter valid
   const hasValidKey = env && VALID_ENV_KEY && env === VALID_ENV_KEY;
+  
+  console.log('hasValidKey:', hasValidKey);
+  console.log('Request count:', requestCountWithoutKey);
   
   if (!hasValidKey) {
     const now = Date.now();
@@ -28,6 +36,8 @@ exports.handler = async (e, t) => {
     }
     
     requestCountWithoutKey++;
+    
+    console.log('New request count:', requestCountWithoutKey);
     
     if (requestCountWithoutKey > 5) {
       const timeUntilReset = thirtyMinutes - (now - lastResetTime);
@@ -42,7 +52,7 @@ exports.handler = async (e, t) => {
 </head>
 <body style="background: #333; color: white; text-align: center;">
   <h1 style="color: red;">⏰ Akses Terbatas</h1>
-  <p>Tunggu <strong>${minutesLeft} menit</p>
+  <p>Tunggu <strong>${minutesLeft} menit</strong></p>
 </body>
 </html>`,
         headers: {
@@ -52,6 +62,7 @@ exports.handler = async (e, t) => {
     }
   }
   
+  // MODIFIKASI: Ganti dari webtoon ke phinf
   const isPhinf = /phinf/i.test(r);
   
   try {
@@ -61,6 +72,7 @@ exports.handler = async (e, t) => {
   Array.isArray(r) && (r = r.join("&url=")),
     (r = r.replace(/http:\/\/1\.1\.\d\.\d\/bmi\.(https?:\/\/)?/i, "http://"));
   
+  // MODIFIKASI: Skip DuckDuckGo hanya untuk URL yang mengandung phinf
   if (!isPhinf) {
     r = `https://proxy.duckduckgo.com/iu/?u=${encodeURIComponent(r)}`;
   }
