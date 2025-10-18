@@ -17,8 +17,10 @@ exports.handler = async (e, t) => {
   Array.isArray(r) && (r = r.join("&url=")),
     (r = r.replace(/http:\/\/1\.1\.\d\.\d\/bmi\/(https?:\/\/)?/i, "http://"));
   
+  // Cek apakah URL dari webtoon (dikecualikan dari DDG proxy)
   const isWebtoon = /webtoons?\.com/i.test(r);
   
+  // Jika bukan webtoon, gunakan DDG proxy untuk bypass blocking
   if (!isWebtoon) {
     r = `https://proxy.duckduckgo.com/iu/?u=${encodeURIComponent(r)}`;
   }
@@ -67,7 +69,7 @@ exports.handler = async (e, t) => {
       let $ = y.toString("base64");
       return {
         statusCode: 200,
-        body: c.toString("base64"),
+        body: $,  // ✅ DIPERBAIKI - kirim hasil compress
         isBase64Encoded: !0,
         headers: { "content-encoding": "identity", ...h, ...g },
       };
