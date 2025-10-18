@@ -43,9 +43,8 @@ exports.handler = async (e, t) => {
         statusCode: 429,
         body: `<html>
 <head>
-  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Limit Exceeded</title>
+  <title>Batas Tercapai</title>
 </head>
 <body>
   <h1>⏰ Batas Tercapai</h1>
