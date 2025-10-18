@@ -4,13 +4,40 @@ const pick = require("../util/pick"),
   compress = require("../util/compress"),
   DEFAULT_QUALITY = 40;
 
+let requestCountWithoutKey = 0;
+let lastResetTime = Date.now();
+
 exports.handler = async (e, t) => {
-  let { url: r, jpeg: s, l: a, w: width, h: height, q: customQuality } = e.queryStringParameters;
+  let { url: r, jpeg: s, l: a, w: width, h: height, q: customQuality, env } = e.queryStringParameters;
   
   if (!r)
     return { statusCode: 200, body: "Bandwidth Hero Data Compression Service" };
   
-  // Cek webtoon dari parameter URL mentah
+  const VALID_ENV_KEY = process.env.ENV_KEY || "your-secret-key-here";
+  const hasValidKey = env && env === VALID_ENV_KEY;
+  
+  if (!hasValidKey) {
+    const now = Date.now();
+    const thirtyMinutes = 30 * 60 * 1000;
+    
+    if (now - lastResetTime > thirtyMinutes) {
+      requestCountWithoutKey = 0;
+      lastResetTime = now;
+    }
+    
+    requestCountWithoutKey++;
+    
+    if (requestCountWithoutKey > 5) {
+      const timeUntilReset = thirtyMinutes - (now - lastResetTime);
+      const minutesLeft = Math.ceil(timeUntilReset / 60000);
+      
+      return {
+        statusCode: 429,
+        body: `Limit exceeded. Wait ${minutesLeft} minutes or add env key.`
+      };
+    }
+  }
+  
   const isWebtoon = /webtoon/i.test(r);
   
   try {
@@ -18,9 +45,8 @@ exports.handler = async (e, t) => {
   } catch {}
   
   Array.isArray(r) && (r = r.join("&url=")),
-    (r = r.replace(/http:\/\/1\.1\.\d\.\d\/bmi\/(https?:\/\/)?/i, "http://"));
+    (r = r.replace(/http:\/\/1\.1\.\d\.\d\/bmi\.(https?:\/\/)?/i, "http://"));
   
-  // Jika bukan webtoon, gunakan DDG proxy untuk bypass blocking
   if (!isWebtoon) {
     r = `https://proxy.duckduckgo.com/iu/?u=${encodeURIComponent(r)}`;
   }
