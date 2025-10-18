@@ -33,7 +33,7 @@ exports.handler = async (e, t) => {
       
       return {
         statusCode: 429,
-        body: `<h1 style="color"red">Batas Tercapai</h1><p><br>Tunggu ${minutesLeft} menit untuk reset</p>`,
+        body: `<center><h1 style="color"red">Batas Tercapai</h1><p><br>Tunggu ${minutesLeft} menit untuk reset</p></center>`,
         headers: {
           "content-type": "text/html"
         }
