@@ -13,7 +13,15 @@ exports.handler = async (e, t) => {
   if (!r)
     return { statusCode: 200, body: "Bandwidth Hero Data Compression Service" };
   
-  const VALID_ENV_KEY = process.env.ENV_KEY || "your-secret-key-here";
+  const VALID_ENV_KEY = process.env.ENV_KEY;
+  
+  if (!VALID_ENV_KEY) {
+    return {
+      statusCode: 500,
+      body: "Server configuration error: ENV_KEY not set"
+    };
+  }
+  
   const hasValidKey = env && env === VALID_ENV_KEY;
   
   if (!hasValidKey) {
@@ -33,7 +41,17 @@ exports.handler = async (e, t) => {
       
       return {
         statusCode: 429,
-        body: `<center><h1 style="color"red">Batas Tercapai</h1><p><br>Tunggu ${minutesLeft} menit untuk reset</p></center>`,
+        body: `<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Limit Exceeded</title>
+</head>
+<body>
+  <h1>⏰ Batas Tercapai</h1>
+  <p>Tunggu ${minutesLeft} menit.</p>
+</body>
+</html>`,
         headers: {
           "content-type": "text/html"
         }
@@ -41,7 +59,7 @@ exports.handler = async (e, t) => {
     }
   }
   
-  const isWebtoon = /webtoon/i.test(r);
+  const isPhinf = /phinf/i.test(r);
   
   try {
     r = JSON.parse(r);
@@ -50,7 +68,7 @@ exports.handler = async (e, t) => {
   Array.isArray(r) && (r = r.join("&url=")),
     (r = r.replace(/http:\/\/1\.1\.\d\.\d\/bmi\.(https?:\/\/)?/i, "http://"));
   
-  if (!isWebtoon) {
+  if (!isPhinf) {
     r = `https://proxy.duckduckgo.com/iu/?u=${encodeURIComponent(r)}`;
   }
   
