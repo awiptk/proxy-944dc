@@ -5,22 +5,19 @@ function compress(imagePath, useWebp, quality, originalSize, width, height) {
   
   let sharpInstance = sharp(imagePath);
   
-  // Resize jika ada parameter width atau height dengan smoothing
   if (width || height) {
     sharpInstance = sharpInstance.resize(width, height, {
       fit: 'inside',
       withoutEnlargement: true,
-      kernel: 'lanczos3' // Algoritma terbaik untuk smoothing
-    });
+      kernel: 'lanczos3'
+    }).sharpen(0.5, 1, 0.5);
   }
 
   return sharpInstance
-    .sharpen() // Tambahkan sharpening ringan untuk hasil lebih halus
     .toFormat(format, { 
       quality, 
       progressive: true, 
-      optimizeScans: true,
-      effort: 6 // Untuk webp, usaha kompresi lebih tinggi = hasil lebih halus
+      optimizeScans: true
     })
     .toBuffer({ resolveWithObject: true })
     .then(({ data, info }) => ({
