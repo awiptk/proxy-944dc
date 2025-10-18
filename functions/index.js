@@ -3,19 +3,28 @@ const pick = require("../util/pick"),
   shouldCompress = require("../util/shouldCompress"),
   compress = require("../util/compress"),
   DEFAULT_QUALITY = 40;
+
 exports.handler = async (e, t) => {
-  let { url: r } = e.queryStringParameters,
-    { jpeg: s, bw: o, l: a } = e.queryStringParameters;
+  let { url: r, jpeg: s, bw: o, l: a, w: width, h: height, q: customQuality } = e.queryStringParameters;
+  
   if (!r)
     return { statusCode: 200, body: "Bandwidth Hero Data Compression Service" };
+  
   try {
     r = JSON.parse(r);
   } catch {}
+  
   Array.isArray(r) && (r = r.join("&url=")),
     (r = r.replace(/http:\/\/1\.1\.\d\.\d\/bmi\/(https?:\/\/)?/i, "http://"));
+  
   let d = !s,
     n = 0 != o,
-    i = parseInt(a, 10) || 40;
+    // Gunakan parameter q jika ada, jika tidak gunakan l, jika tidak ada keduanya gunakan DEFAULT_QUALITY
+    i = parseInt(customQuality || a, 10) || DEFAULT_QUALITY,
+    // Parse width dan height jika ada
+    imageWidth = width ? parseInt(width, 10) : null,
+    imageHeight = height ? parseInt(height, 10) : null;
+  
   try {
     let h = {},
       { data: c, type: l } = await fetch(r, {
@@ -35,6 +44,7 @@ exports.handler = async (e, t) => {
           : { statusCode: e.status || 302 },
       ),
       p = c.length;
+    
     if (!shouldCompress(l, p, d))
       return (
         console.log("Bypassing... Size: ", c.length),
@@ -45,8 +55,9 @@ exports.handler = async (e, t) => {
           headers: { "content-encoding": "identity", ...h },
         }
       );
+    
     {
-      let { err: u, output: y, headers: g } = await compress(c, d, n, i, p);
+      let { err: u, output: y, headers: g } = await compress(c, d, n, i, p, imageWidth, imageHeight);
       if (u) throw (console.log("Conversion failed: ", r), u);
       console.log(`From ${p}, Saved: ${(p - y.length) / p}%`);
       let $ = y.toString("base64");
