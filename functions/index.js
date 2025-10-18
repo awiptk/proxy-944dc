@@ -5,10 +5,13 @@ const pick = require("../util/pick"),
   DEFAULT_QUALITY = 40;
 
 exports.handler = async (e, t) => {
-  let { url: r, jpeg: s, bw: o, l: a, w: width, h: height, q: customQuality } = e.queryStringParameters;
+  let { url: r, jpeg: s, l: a, w: width, h: height, q: customQuality } = e.queryStringParameters;
   
   if (!r)
     return { statusCode: 200, body: "Bandwidth Hero Data Compression Service" };
+  
+  // Cek webtoon dari parameter URL mentah
+  const isWebtoon = /webtoon/i.test(r);
   
   try {
     r = JSON.parse(r);
@@ -17,14 +20,12 @@ exports.handler = async (e, t) => {
   Array.isArray(r) && (r = r.join("&url=")),
     (r = r.replace(/http:\/\/1\.1\.\d\.\d\/bmi\/(https?:\/\/)?/i, "http://"));
   
-  const isWebtoon = /webtoon/i.test(r);
-  
+  // Jika bukan webtoon, gunakan DDG proxy untuk bypass blocking
   if (!isWebtoon) {
     r = `https://proxy.duckduckgo.com/iu/?u=${encodeURIComponent(r)}`;
   }
   
   let d = !s,
-    n = 0 != o,
     i = parseInt(customQuality || a, 10) || DEFAULT_QUALITY,
     imageWidth = width ? parseInt(width, 10) : null,
     imageHeight = height ? parseInt(height, 10) : null;
@@ -61,13 +62,13 @@ exports.handler = async (e, t) => {
       );
     
     {
-      let { err: u, output: y, headers: g } = await compress(c, d, n, i, p, imageWidth, imageHeight);
+      let { err: u, output: y, headers: g } = await compress(c, d, i, p, imageWidth, imageHeight);
       if (u) throw (console.log("Conversion failed: ", r), u);
       console.log(`From ${p}, Saved: ${(p - y.length) / p}%`);
       let $ = y.toString("base64");
       return {
         statusCode: 200,
-        body: $,  // ✅ DIPERBAIKI - kirim hasil compress
+        body: $,
         isBase64Encoded: !0,
         headers: { "content-encoding": "identity", ...h, ...g },
       };
