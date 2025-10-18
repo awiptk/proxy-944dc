@@ -5,13 +5,17 @@ function compress(imagePath, useWebp, quality, originalSize, width, height) {
   
   let sharpInstance = sharp(imagePath);
   
+  // Resize jika ada parameter width atau height dengan smoothing
   if (width || height) {
     sharpInstance = sharpInstance.resize(width, height, {
       fit: 'inside',
       withoutEnlargement: true,
       kernel: 'lanczos3'
-    }).sharpen(0.5, 1, 0.5);
+    });
   }
+  
+  // Blur ringan untuk mengurangi noise/artifak kompresi
+  sharpInstance = sharpInstance.blur(0.3);
 
   return sharpInstance
     .toFormat(format, { 
