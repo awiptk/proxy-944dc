@@ -38,7 +38,7 @@ exports.handler = async (e, t) => {
     
     console.log('New request count:', requestCountWithoutKey);
     
-    if (requestCountWithoutKey > 5) {
+    if (requestCountWithoutKey > 50) {
       const timeUntilReset = sixtyMinutes - (now - lastResetTime);
       const minutesLeft = Math.ceil(timeUntilReset / 60000);
       
