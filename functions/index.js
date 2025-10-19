@@ -46,7 +46,7 @@ async function resolveDNS(hostname) {
   }
 }
 
-// Fungsi untuk fetch dengan DNS resolver (pre-warm DNS)
+// Fungsi untuk fetch dengan DNS resolver
 async function fetchWithDNS(url, options = {}) {
   try {
     const urlObj = new URL(url);
@@ -57,19 +57,26 @@ async function fetchWithDNS(url, options = {}) {
       return await fetch(url, options);
     }
     
-    // Pre-resolve DNS untuk "warm up" DNS cache di Node.js
+    // Resolve DNS
     const ip = await resolveDNS(hostname);
     
     if (ip) {
-      console.log(`DNS Pre-warmed: ${hostname} -> ${ip}, now fetching original URL`);
+      // Ganti hostname dengan IP di URL
+      const urlWithIP = url.replace(hostname, ip);
+      
+      // Tambahkan Host header agar server tahu domain aslinya
+      const headers = {
+        ...options.headers,
+        'Host': hostname
+      };
+      
+      console.log(`Fetching with IP: ${urlWithIP}`);
+      return await fetch(urlWithIP, { ...options, headers });
     } else {
-      console.log(`DNS resolution failed for ${hostname}, proceeding with normal fetch`);
+      // Fallback ke fetch biasa jika DNS resolution gagal
+      console.log(`DNS resolution failed, using normal fetch for: ${url}`);
+      return await fetch(url, options);
     }
-    
-    // Fetch dengan URL original (bukan IP) - biarkan Node.js handle HTTPS/SNI
-    // DNS sudah di-resolve sebelumnya jadi seharusnya lebih cepat
-    return await fetch(url, options);
-    
   } catch (error) {
     console.error('Error in fetchWithDNS:', error.message);
     // Fallback ke fetch biasa
@@ -147,27 +154,25 @@ exports.handler = async (e, t) => {
     imageHeight = height ? parseInt(height, 10) : null;
   
   try {
-    let h = {};
-    
-    // MODIFIKASI: Gunakan fetchWithDNS instead of fetch
-    const response = await fetchWithDNS(r, {
-      headers: {
-        ...pick(e.headers, ["cookie", "dnt", "referer"]),
-        "user-agent": "Mozilla/5.0 (Linux; Android 11; M2102J20SG Build/RKQ1.200826.002) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.7103.60 Mobile Safari/537.36",
-        "x-forwarded-for": e.headers["x-forwarded-for"] || e.ip,
-        via: "1.1 bandwidth-hero",
-      },
-    });
-    
-    if (!response.ok) {
-      console.log(`Fetch failed with status: ${response.status}`);
-      return { statusCode: response.status || 302 };
-    }
-    
-    h = response.headers;
-    const c = await response.buffer();
-    const l = response.headers.get("content-type") || "";
-    const p = c.length;
+    let h = {},
+      // MODIFIKASI: Gunakan fetchWithDNS instead of fetch
+      { data: c, type: l } = await fetchWithDNS(r, {
+        headers: {
+          ...pick(e.headers, ["cookie", "dnt", "referer"]),
+          "user-agent": "Mozilla/5.0 (Linux; Android 11; M2102J20SG Build/RKQ1.200826.002) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.7103.60 Mobile Safari/537.36",
+          "x-forwarded-for": e.headers["x-forwarded-for"] || e.ip,
+          via: "1.1 bandwidth-hero",
+        },
+      }).then(async (e) =>
+        e.ok
+          ? ((h = e.headers),
+            {
+              data: await e.buffer(),
+              type: e.headers.get("content-type") || "",
+            })
+          : { statusCode: e.status || 302 },
+      ),
+      p = c.length;
     
     if (!shouldCompress(l, p, d))
       return (
