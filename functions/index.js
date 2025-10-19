@@ -62,7 +62,6 @@ exports.handler = async (e, t) => {
     }
   }
   
-  // MODIFIKASI: Ganti dari webtoon ke phinf
   const isPhinf = /phinf/i.test(r);
   
   try {
@@ -71,11 +70,6 @@ exports.handler = async (e, t) => {
   
   Array.isArray(r) && (r = r.join("&url=")),
     (r = r.replace(/http:\/\/1\.1\.\d\.\d\/bmi\.(https?:\/\/)?/i, "http://"));
-  
-  // MODIFIKASI: Skip DuckDuckGo hanya untuk URL yang mengandung phinf
-  if (!isPhinf) {
-    r = `https://proxy.duckduckgo.com/iu/?u=${encodeURIComponent(r)}`;
-  }
   
   let d = !s,
     i = parseInt(customQuality || a, 10) || DEFAULT_QUALITY,
@@ -87,7 +81,7 @@ exports.handler = async (e, t) => {
       { data: c, type: l } = await fetch(r, {
         headers: {
           ...pick(e.headers, ["cookie", "dnt", "referer"]),
-          "user-agent": "Bandwidth-Hero Compressor",
+          "user-agent": "Mozilla/5.0 (Linux; Android 11; M2102J20SG Build/RKQ1.200826.002) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.7103.60 Mobile Safari/537.36",
           "x-forwarded-for": e.headers["x-forwarded-for"] || e.ip,
           via: "1.1 bandwidth-hero",
         },
