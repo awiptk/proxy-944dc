@@ -46,7 +46,7 @@ async function resolveDNS(hostname) {
   }
 }
 
-// Fungsi untuk fetch dengan DNS resolver
+// Fungsi untuk fetch dengan DNS resolver (pre-warm DNS)
 async function fetchWithDNS(url, options = {}) {
   try {
     const urlObj = new URL(url);
@@ -57,26 +57,19 @@ async function fetchWithDNS(url, options = {}) {
       return await fetch(url, options);
     }
     
-    // Resolve DNS
+    // Pre-resolve DNS untuk "warm up" DNS cache di Node.js
     const ip = await resolveDNS(hostname);
     
     if (ip) {
-      // Ganti hostname dengan IP di URL
-      const urlWithIP = url.replace(hostname, ip);
-      
-      // Tambahkan Host header agar server tahu domain aslinya
-      const headers = {
-        ...options.headers,
-        'Host': hostname
-      };
-      
-      console.log(`Fetching with IP: ${urlWithIP}`);
-      return await fetch(urlWithIP, { ...options, headers });
+      console.log(`DNS Pre-warmed: ${hostname} -> ${ip}, now fetching original URL`);
     } else {
-      // Fallback ke fetch biasa jika DNS resolution gagal
-      console.log(`DNS resolution failed, using normal fetch for: ${url}`);
-      return await fetch(url, options);
+      console.log(`DNS resolution failed for ${hostname}, proceeding with normal fetch`);
     }
+    
+    // Fetch dengan URL original (bukan IP) - biarkan Node.js handle HTTPS/SNI
+    // DNS sudah di-resolve sebelumnya jadi seharusnya lebih cepat
+    return await fetch(url, options);
+    
   } catch (error) {
     console.error('Error in fetchWithDNS:', error.message);
     // Fallback ke fetch biasa
