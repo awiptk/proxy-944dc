@@ -50,7 +50,7 @@ exports.handler = async (e, t) => {
   <title>Akses Terbatas</title>
 </head>
 <body style="background: #333; color: white; text-align: center;">
-  <h1 style="color: red;">⏰ Akses Terbatas</h1>
+  <h1 style="color: red;">&#x23F0; Akses Terbatas</h1>
   <p><h3>Tunggu <strong style="color: #4ee44e;">${minutesLeft} menit</strong></h3></p>
 </body>
 </html>`,
