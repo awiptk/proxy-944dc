@@ -28,9 +28,9 @@ exports.handler = async (e, t) => {
   
   if (!hasValidKey) {
     const now = Date.now();
-    const thirtyMinutes = 30 * 60 * 1000;
+    const sixtyMinutes = 60 * 60 * 1000;
     
-    if (now - lastResetTime > thirtyMinutes) {
+    if (now - lastResetTime > sixtyMinutes) {
       requestCountWithoutKey = 0;
       lastResetTime = now;
     }
@@ -40,7 +40,7 @@ exports.handler = async (e, t) => {
     console.log('New request count:', requestCountWithoutKey);
     
     if (requestCountWithoutKey > 5) {
-      const timeUntilReset = thirtyMinutes - (now - lastResetTime);
+      const timeUntilReset = sixtyMinutes - (now - lastResetTime);
       const minutesLeft = Math.ceil(timeUntilReset / 60000);
       
       return {
