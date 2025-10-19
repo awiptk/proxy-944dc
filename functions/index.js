@@ -7,6 +7,83 @@ const pick = require("../util/pick"),
 let requestCountWithoutKey = 0;
 let lastResetTime = Date.now();
 
+// DNS Cache untuk menghindari resolve berulang
+const dnsCache = new Map();
+const DNS_CACHE_TTL = 5 * 60 * 1000; // 5 menit
+
+// Fungsi untuk resolve DNS menggunakan Google DoH (DNS over HTTPS)
+async function resolveDNS(hostname) {
+  // Cek cache dulu
+  const cached = dnsCache.get(hostname);
+  if (cached && Date.now() - cached.timestamp < DNS_CACHE_TTL) {
+    console.log(`DNS Cache Hit: ${hostname} -> ${cached.ip}`);
+    return cached.ip;
+  }
+
+  try {
+    console.log(`Resolving DNS for: ${hostname}`);
+    const response = await fetch(`https://dns.google/resolve?name=${hostname}&type=A`);
+    const data = await response.json();
+    
+    if (data.Answer && data.Answer.length > 0) {
+      const ip = data.Answer[0].data;
+      console.log(`DNS Resolved: ${hostname} -> ${ip}`);
+      
+      // Simpan ke cache
+      dnsCache.set(hostname, {
+        ip: ip,
+        timestamp: Date.now()
+      });
+      
+      return ip;
+    } else {
+      console.log(`No DNS records found for: ${hostname}`);
+      return null;
+    }
+  } catch (error) {
+    console.error(`DNS Resolution failed for ${hostname}:`, error.message);
+    return null;
+  }
+}
+
+// Fungsi untuk fetch dengan DNS resolver
+async function fetchWithDNS(url, options = {}) {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname;
+    
+    // Skip DNS resolution untuk localhost dan IP address
+    if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+      return await fetch(url, options);
+    }
+    
+    // Resolve DNS
+    const ip = await resolveDNS(hostname);
+    
+    if (ip) {
+      // Ganti hostname dengan IP di URL
+      const urlWithIP = url.replace(hostname, ip);
+      
+      // Tambahkan Host header agar server tahu domain aslinya
+      const headers = {
+        ...options.headers,
+        'Host': hostname
+      };
+      
+      console.log(`Fetching with IP: ${urlWithIP}`);
+      return await fetch(urlWithIP, { ...options, headers });
+    } else {
+      // Fallback ke fetch biasa jika DNS resolution gagal
+      console.log(`DNS resolution failed, using normal fetch for: ${url}`);
+      return await fetch(url, options);
+    }
+  } catch (error) {
+    console.error('Error in fetchWithDNS:', error.message);
+    // Fallback ke fetch biasa
+    return await fetch(url, options);
+  }
+}
+
 exports.handler = async (e, t) => {
   let { url: r, jpeg: s, l: a, w: width, h: height, q: customQuality, env } = e.queryStringParameters;
   
@@ -16,7 +93,7 @@ exports.handler = async (e, t) => {
   console.log('Match:', env === process.env.ENV_KEY);
   
   if (!r)
-    return { statusCode: 200, body: "Bandwidth Hero Data Compression Service" };
+    return { statusCode: 200, body: "Bandwidth Hero Data Compression Service with DNS Resolver" };
   
   const VALID_ENV_KEY = process.env.ENV_KEY;
   
@@ -78,7 +155,8 @@ exports.handler = async (e, t) => {
   
   try {
     let h = {},
-      { data: c, type: l } = await fetch(r, {
+      // MODIFIKASI: Gunakan fetchWithDNS instead of fetch
+      { data: c, type: l } = await fetchWithDNS(r, {
         headers: {
           ...pick(e.headers, ["cookie", "dnt", "referer"]),
           "user-agent": "Mozilla/5.0 (Linux; Android 11; M2102J20SG Build/RKQ1.200826.002) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.7103.60 Mobile Safari/537.36",
